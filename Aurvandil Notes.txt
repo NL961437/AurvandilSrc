@@ -1,0 +1,46 @@
+TASKS
+	// Maybe make variable stored in database to store current size of sphere
+	Build Sphere //DONE
+		Connect to database
+		Create new healpix sphere from nsize
+		get number of pixels
+		Generate create table commands
+		Send commands
+		Close connection
+	Destroy Sphere //DONE
+		Connect to database
+		query for number of existing tables
+		generate drop table commands
+		send commands
+		Close Connection
+	Count Stars //DONE
+		Open connection
+		Query for existing tables
+		Loop through each table querying for size
+		add to total sum
+		return sum
+		Close connection
+	Add Stars //DONE
+		Open connection
+		Create new logical sphere from existing sphere
+		open csv
+		skip garbage data
+		get data from csv
+		format data into commands
+		compile commands
+		run commands
+		close csv
+		move csv to finished folder
+		Close connection
+		// Might need to open multiple connections to take full advantage of processor
+	Cone Search
+		Open connection
+		Query for size of existing sphere
+		Create new sphere from existing sphere
+		Pixel query takes in ra, dec, and radius
+		convert ra and dec to healpix coordinates
+		convert radius to radians
+		run disc query for pixels within disc
+		loop through each pixel cheking the distance from center fo search cone
+		Add correct stars to VOT table
+		Save VOT table to output folder
