@@ -40,6 +40,14 @@ public class AurvandilGUI {
     private JTextField userField;
     private JPasswordField passField;
 
+    /**
+     * Create a new Aurvandil GUI window
+     * Step 1: Create frame
+     * Step 2: Create cascade menus
+     * Step 3: Create the Upper panel with the query and database fields
+     * Step 4: Create the parameters panel
+     * Step 5: Show window
+     */
     public AurvandilGUI() {
         //FRAME CREATION
         frame = new JFrame("Aurvandil");
@@ -61,6 +69,9 @@ public class AurvandilGUI {
         frame.setVisible(true);
     }
 
+    /**
+     * Add each of the different "Advanced Commands"
+     */
     public void createCascadeMenus() {
         JMenu menu;
         JMenuBar menuBar = new JMenuBar();
@@ -91,6 +102,10 @@ public class AurvandilGUI {
         menu.add(destroySphere);
     }
 
+    /**
+     * Create a new query panel with parameters and a "Run Query" button
+     * @param commonPanel panel to place it in
+     */
     public void createQueryPanel(JPanel commonPanel) {
         JPanel queryPanel = new JPanel(new GridLayout(0,4));
         queryPanel.setBorder(new EmptyBorder(0,0,7,0));
@@ -130,6 +145,10 @@ public class AurvandilGUI {
         queryPanel.add(radPanel);
     }
 
+    /**
+     * Create new panel with database information
+     * @param commonPanel panel to place it in
+     */
     public void createDatabasePanel(JPanel commonPanel) {
         JPanel dbInfoPanel = new JPanel(new GridLayout(0,3));
         dbInfoPanel.setBorder(new MatteBorder(1,0, 0,0, Color.BLACK));
@@ -180,6 +199,9 @@ public class AurvandilGUI {
         dbInfoPanel.add(passPanel);
     }
 
+    /**
+     * Create a panel to house parameters and filter fields
+     */
     public void createParameterPanel() {
         GridBagConstraints c = new GridBagConstraints();
         c.fill = GridBagConstraints.HORIZONTAL;
@@ -339,6 +361,9 @@ public class AurvandilGUI {
         frame.add(new JScrollPane(parameterPanel));
     }
 
+    /**
+     * Send database information to the PostgreSQLBA object
+     */
     public void setDatabaseInformation() {
         String ip = "jbdc:postgresql://" + dbField.getText() + ":" + portField.getText() + "/" + dbNameField.getText();
         String port = portField.getText();
@@ -348,7 +373,10 @@ public class AurvandilGUI {
         System.out.println(ip);
     }
 
-    // IN FUTURE, SAVE JSWING FIELDS TO JSON INSTEAD OF JUST THE VALUES. SIMPLER AND FASTER.
+    /**
+     * Save fields to a cahce file to be recalled on program open
+     * IN FUTURE: SAVE JSWING FIELDS TO JSON INSTEAD OF JUST THE VALUES. SIMPLER AND FASTER.
+     */
     public void saveSettingsToCache() {
         String ra = raField.getText();
         String dec = decField.getText();
@@ -385,6 +413,9 @@ public class AurvandilGUI {
         }
     }
 
+    /**
+     * Load the cached parameters into respective fields on program open
+     */
     public void loadSettingsFromCache() {
         if (!new File("AurvandilCache.json").isFile()) {
             return;

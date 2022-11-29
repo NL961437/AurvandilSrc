@@ -15,6 +15,14 @@ public class PostgreSQLBA {
     private static String port;
     private static String username;
     private static String password;
+
+    /**
+     * Set database settings for the window
+     * @param newIP database ip
+     * @param newPort database port
+     * @param newUser database username
+     * @param newPass database user password
+     */
     public static void setDatabaseInformation(String newIP, String newPort, String newUser, String newPass) {
         ip = newIP;
         port = newPort;
@@ -22,6 +30,11 @@ public class PostgreSQLBA {
         password = newPass;
     }
 
+    /**
+     * Run a set of commands on the targeted PostgreSQL database
+     * @param commands String array of commands to execute
+     * @param conn Java database Connection
+     */
     public static void runCommands(String[] commands, Connection conn) {
         try {
             Statement statement = conn.createStatement();
@@ -34,6 +47,10 @@ public class PostgreSQLBA {
         }
     }
 
+    /**
+     * Create Java SQL database connection
+     * @return Java database connection
+     */
     public static Connection createConnection() {
         try {
             String url = ip;
@@ -48,6 +65,10 @@ public class PostgreSQLBA {
         }
     }
 
+    /**
+     * Close Java SQL database connection
+     * @param connection connection to terminate
+     */
     public static void closeConnection(Connection connection) {
         try {
             connection.close();
@@ -57,7 +78,9 @@ public class PostgreSQLBA {
     }
 
     /**
-     * Get size of current sphere if any
+     * Get the size of the sphere currently stored in the SQL database
+     * @param conn Java SQL database connection
+     * @return size of current sphere
      */
     public static int getSphereSize(Connection conn) {
         String findNumberOfTables = "SELECT COUNT(table_name) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'";
@@ -74,6 +97,11 @@ public class PostgreSQLBA {
         }
     }
 
+    /**
+     * Get number of rows within the current HEALPix SQL database
+     * @param conn Java SQL database connection
+     * @return number of rows in current sphere
+     */
     public static long getNumberOfRows(Connection conn) {
         String findNumberOfRows = "SELECT COUNT(solution_id) FROM %s";
         int pixels = getSphereSize(conn);
@@ -92,6 +120,16 @@ public class PostgreSQLBA {
         return sum;
     }
 
+    /**
+     * Get a list of query commands to send to the HEALPix pixel table
+     * @param pixel pixel to send queries to
+     * @param connection Java SQL database connection
+     * @param query full query with included filters
+     * @param ra right ascension in degrees (0 to 360)
+     * @param dec declination in degrees (-90 to 90)
+     * @param rad radius of the cone search in degrees
+     * @return String list of commands
+     */
     public static List<String> makeQuery(long pixel, Connection connection, String query, double ra, double dec, double rad) {
         List<String> stars = new ArrayList<>();
         try {
@@ -114,6 +152,11 @@ public class PostgreSQLBA {
         return stars;
     }
 
+    /**
+     * Check if an existing HEALPix sphere already exists in the PostgreSQL database
+     * @param conn Java SQL database connection
+     * @return boolean if sphere exists
+     */
     public static boolean sphereExists(Connection conn) {
         String findNumberOfTables = "SELECT COUNT(table_name) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'";
         try {

@@ -8,9 +8,19 @@ import java.awt.event.ActionListener;
 
 public class MenuActionListener implements ActionListener {
     private AurvandilGUI aurvandilGUI;
+
+    /**
+     * Create new listener for events in the "Advanced Commands" cascade menu
+     * @param aurvandilGUI AurvandilGUI object
+     */
     public MenuActionListener(AurvandilGUI aurvandilGUI) {
         this.aurvandilGUI = aurvandilGUI;
     }
+
+    /**
+     * Choose what action to perform based on selection
+     * @param e the event to be processed
+     */
     public void actionPerformed(ActionEvent e) {
         switch(e.getActionCommand()) {
             case "AddFiles":
@@ -30,6 +40,9 @@ public class MenuActionListener implements ActionListener {
         }
     }
 
+    /**
+     * Trigger controller to add files to the database
+     */
     private void addFilesDialog() {
         aurvandilGUI.setDatabaseInformation();
         JFrame frame = new JFrame();
@@ -40,6 +53,9 @@ public class MenuActionListener implements ActionListener {
         System.out.println("Adding files to database");
     }
 
+    /**
+     * Trigger controller to count the number of stars in the database
+     */
     private void countStarsDialog() {
         aurvandilGUI.setDatabaseInformation();
         JFrame frame = new JFrame();
@@ -49,6 +65,9 @@ public class MenuActionListener implements ActionListener {
         System.out.println("Counting all stars");
     }
 
+    /**
+     * Trigger controller to build a HEALPix PostgreSQL database sphere
+     */
     private void buildSphereDialog() {
         aurvandilGUI.setDatabaseInformation();
         JFrame frame = new JFrame();
@@ -63,6 +82,9 @@ public class MenuActionListener implements ActionListener {
         System.out.println("Building HEALPix sphere");
     }
 
+    /**
+     * Trigger controller to destroy the current HEALPix PostgreSQL database sphere
+     */
     private void destroySphereDialog() {
         aurvandilGUI.setDatabaseInformation();
         JFrame frame = new JFrame();

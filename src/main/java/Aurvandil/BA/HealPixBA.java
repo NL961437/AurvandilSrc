@@ -1,12 +1,17 @@
 package Aurvandil.BA;
 
-import essentials.HealpixBase;
-import essentials.Pointing;
+import HEALPixUtil.HealpixBase;
+import HEALPixUtil.Pointing;
 
-import static essentials.Scheme.NESTED;
+import static HEALPixUtil.Scheme.NESTED;
 
 public class HealPixBA {
     HealpixBase sphere;
+
+    /**
+     * Constructor to generate the HEALPix sphere from an existing database
+     * @param numPixels number of pixels in the database
+     */
     public HealPixBA(int numPixels) {
         try {
             int nSize = (int) Math.sqrt(numPixels / 12.0);
@@ -16,6 +21,12 @@ public class HealPixBA {
         }
     }
 
+    /**
+     * Get the pixel associated with a specific point on a HEALPix sphere
+     * @param ra right ascension in degrees (0 to 360)
+     * @param dec declination in degrees (-90 to 90)
+     * @return pixel number
+     */
     public long getPixelLocation(double ra, double dec) {
         //ra = 0 -> 360
         //dec = -90 -> 90
@@ -31,6 +42,13 @@ public class HealPixBA {
         return pixel;
     }
 
+    /**
+     * Get the pixels that lie within a specific cone search
+     * @param ra right ascension in degrees (0 to 360)
+     * @param dec declination in degrees (-90 to 90)
+     * @param radius radius in degrees
+     * @return array of pixel numbers
+     */
     public long[] conePixelSearch(double ra, double dec, double radius) {
         //ra = 0 -> 360
         //dec = -90 -> 90

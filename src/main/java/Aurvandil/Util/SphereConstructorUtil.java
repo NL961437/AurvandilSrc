@@ -8,27 +8,64 @@ import java.util.List;
 
 public class SphereConstructorUtil {
     public static String findAllTables = "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'";
-    public static String createTable = "CREATE TABLE pixel%d (" +
-            "solution_id int8," +
-            "designation text," +
-            "source_id int8," +
-            "random_index int8," +
-            "ref_epoch float8," +
-            "ra float8," +
-            "ra_error float4," +
-            "dec float8," +
-            "dec_error float4," +
-            "parallax float8," +
-            "parallax_error float4," +
-            "parallax_over_error float4," +
-            "pm float4," +
-            "pmra float8," +
-            "pmra_error float4," +
-            "pmdec float8," +
-            "pmdec_error float4," +
-            "ra_dec_corr float4," +
-            "ra_parallax_corr float4," +
-            "ra_pmra_corr float4," +
+
+	/**
+	 * Get an array of commands to destroy all tables in database
+	 * @param conn Java database connection
+	 * @return String array of commands to DROP tables in database
+	 */
+	public static String[] getDestroySphereCommands(Connection conn) {
+		List<String> names = new ArrayList<>();
+		try {
+			Statement st = conn.createStatement();
+			ResultSet rs = st.executeQuery(findAllTables);
+			while (rs.next()) {
+				names.add(rs.getString(1));
+			}
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+		String[] commands = new String[names.size()];
+		for (int name = 0; name < names.size(); name++) {
+			commands[name] = "DROP TABLE " + names.get(name);
+		}
+		return commands;
+	}
+
+	/**
+	 * Get a list of CREATE table commands to build a HEALPix PostgreSQL database connection
+	 * @param numberOfPixels number of pixels that need a respective database
+	 * @return String array of CREATE table commands
+	 */
+	public static String[] getBuildSphereCommands(int numberOfPixels) {
+		String[] commands = new String[numberOfPixels];
+		for (int pixel = 0; pixel < numberOfPixels; pixel++) {
+			commands[pixel] = String.format(createTable, pixel);
+		}
+		return commands;
+	}
+
+	public static String createTable = "CREATE TABLE pixel%d (" +
+			"solution_id int8," +
+			"designation text," +
+			"source_id int8," +
+			"random_index int8," +
+			"ref_epoch float8," +
+			"ra float8," +
+			"ra_error float4," +
+			"dec float8," +
+			"dec_error float4," +
+			"parallax float8," +
+			"parallax_error float4," +
+			"parallax_over_error float4," +
+			"pm float4," +
+			"pmra float8," +
+			"pmra_error float4," +
+			"pmdec float8," +
+			"pmdec_error float4," +
+			"ra_dec_corr float4," +
+			"ra_parallax_corr float4," +
+			"ra_pmra_corr float4," +
 			"ra_pmdec_corr float4," +
 			"dec_parallax_corr float4," +
 			"dec_pmra_corr float4," +
@@ -160,32 +197,6 @@ public class SphereConstructorUtil {
 			"ebpminrp_gspphot float4," +
 			"ebpminrp_gspphot_lower float4," +
 			"ebpminrp_gspphot_upper float4," +
-            "libname_gspphot text" +
-            ");";
-
-	public static String[] getDestroySphereCommands(Connection conn) {
-		List<String> names = new ArrayList<>();
-		try {
-			Statement st = conn.createStatement();
-			ResultSet rs = st.executeQuery(findAllTables);
-			while (rs.next()) {
-				names.add(rs.getString(1));
-			}
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-		}
-		String[] commands = new String[names.size()];
-		for (int name = 0; name < names.size(); name++) {
-			commands[name] = "DROP TABLE " + names.get(name);
-		}
-		return commands;
-	}
-
-	public static String[] getBuildSphereCommands(int numberOfPixels) {
-		String[] commands = new String[numberOfPixels];
-		for (int pixel = 0; pixel < numberOfPixels; pixel++) {
-			commands[pixel] = String.format(createTable, pixel);
-		}
-		return commands;
-	}
+			"libname_gspphot text" +
+			");";
 }

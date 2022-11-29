@@ -8,6 +8,10 @@ public class CSVReaderDAO {
     private Scanner reader = null;
     private int rowCount;
 
+    /**
+     * Create new data access object of a GDR3 CSV file to read data
+     * @param name name of CSV file
+     */
     public CSVReaderDAO(String name) {
         try {
             File myObj = new File(name);
@@ -32,6 +36,10 @@ public class CSVReaderDAO {
         }
     }
 
+    /**
+     * Get next data row
+     * @return String array of row data
+     */
     public String[] getNextRow() {
         if (reader.hasNextLine()) {
             return reader.nextLine().split(",");
@@ -40,14 +48,26 @@ public class CSVReaderDAO {
         }
     }
 
+    /**
+     * Close CSV data access object
+     */
     public void closeScanner() {
         reader.close();
     }
 
+    /**
+     * Get the number of data rows in the CSV file
+     * @return number of rows
+     */
     public int getRowCount() {
         return rowCount;
     }
 
+    /**
+     * Parse row data for insertion into database
+     * @param row String array of raw row data
+     * @return String array of parsed row data
+     */
     public static String[] convertRow(String[] row) {
         row[1] = row[1].replaceAll("\"", "'");
         row[111] = row[111].replaceAll("\"", "'");

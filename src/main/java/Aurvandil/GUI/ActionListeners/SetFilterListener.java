@@ -10,11 +10,20 @@ public class SetFilterListener implements ActionListener {
     private final int param;
     private final AurvandilGUI aurvandilGUI;
 
+    /**
+     * Create new listener to control filter enables and disables
+     * @param aurvandilGUI AurvandilGUI object
+     * @param param row number of the parameter
+     */
     public SetFilterListener(AurvandilGUI aurvandilGUI, int param) {
         this.aurvandilGUI = aurvandilGUI;
         this.param = param;
     }
 
+    /**
+     * Change the visibility of filter components for the row the listener is attached to
+     * @param e the event to be processed
+     */
     public void actionPerformed(ActionEvent e) {
         boolean changeTo;
         if (Objects.equals(aurvandilGUI.useFilter[param].getSelectedItem(), "Filter")) {

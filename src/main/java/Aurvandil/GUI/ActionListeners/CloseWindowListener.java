@@ -8,10 +8,19 @@ import java.awt.event.WindowListener;
 
 public class CloseWindowListener implements WindowListener {
     private AurvandilGUI aurvandilGUI;
+
+    /**
+     * Create a new listener to run actions on window close
+     * @param aurvandilGUI AurvandilGUI object
+     */
     public CloseWindowListener(AurvandilGUI aurvandilGUI) {
         this.aurvandilGUI = aurvandilGUI;
     }
 
+    /**
+     * Save the values of the fields in the Aurvandil window to a settings cache file
+     * @param w the event to be processed
+     */
     public void windowClosing(WindowEvent w) {
         aurvandilGUI.saveSettingsToCache();
     }
