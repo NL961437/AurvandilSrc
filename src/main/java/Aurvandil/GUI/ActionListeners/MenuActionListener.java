@@ -1,5 +1,6 @@
 package Aurvandil.GUI.ActionListeners;
 
+import Aurvandil.Controllers.AurvandilController;
 import Aurvandil.GUI.AurvandilGUI;
 
 import javax.swing.*;
@@ -7,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class MenuActionListener implements ActionListener {
+    boolean circuitBreaker = true;
     private AurvandilGUI aurvandilGUI;
 
     /**
@@ -45,12 +47,10 @@ public class MenuActionListener implements ActionListener {
      */
     private void addFilesDialog() {
         aurvandilGUI.setDatabaseInformation();
-        JFrame frame = new JFrame();
-        int decision = JOptionPane.showConfirmDialog(frame, "Are all files in the UncommittedFiles directory?", "Confirmation", JOptionPane.YES_NO_OPTION);
-        if (decision == 0) {
-            //AurvandilController.addFilesToDatabase(); //TESTING //NEEDS TO HAVE LOADING DIALOG SCREEN
+        int decision = JOptionPane.showConfirmDialog(new JFrame(), "Are all files in the UncommittedFiles directory?", "Confirmation", JOptionPane.YES_NO_OPTION);
+        if (decision == 0 && circuitBreaker) {
+            AurvandilController.addFilesToDatabase();
         }
-        System.out.println("Adding files to database");
     }
 
     /**
@@ -58,11 +58,7 @@ public class MenuActionListener implements ActionListener {
      */
     private void countStarsDialog() {
         aurvandilGUI.setDatabaseInformation();
-        JFrame frame = new JFrame();
-        long starCount = -1;
-        //starCount = AurvandilController.countAllStars(); //TESTING //NEEDS TO HAVE LOADING DIALOG SCREEN
-        JOptionPane.showMessageDialog(frame, "Number of stars: " + starCount);
-        System.out.println("Counting all stars");
+        if (circuitBreaker) AurvandilController.countAllStars();
     }
 
     /**
@@ -70,16 +66,13 @@ public class MenuActionListener implements ActionListener {
      */
     private void buildSphereDialog() {
         aurvandilGUI.setDatabaseInformation();
-        JFrame frame = new JFrame();
         try {
-            int size = Integer.parseInt(JOptionPane.showInputDialog("Please enter number of nested pixels (MINIMUM = 1)"));
-            //AurvandilController.buildSphere(size); //TESTING //NEEDS TO HAVE LOADING DIALOG SCREEN
-            System.out.println("Creating HEALPix Sphere with nSize: " + size);
+            int size = Integer.parseInt(JOptionPane.showInputDialog("Please enter number of HEALPix nests (MINIMUM = 1)"));
+            if (circuitBreaker) AurvandilController.buildSphere(size);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(frame, "Invalid Input!");
+            JOptionPane.showMessageDialog(new JFrame(), "Invalid Input!");
             e.printStackTrace();
         }
-        System.out.println("Building HEALPix sphere");
     }
 
     /**
@@ -87,11 +80,9 @@ public class MenuActionListener implements ActionListener {
      */
     private void destroySphereDialog() {
         aurvandilGUI.setDatabaseInformation();
-        JFrame frame = new JFrame();
-        int decision = JOptionPane.showConfirmDialog(frame, "Are you sure you want to destroy the sphere?", "Confirmation", JOptionPane.YES_NO_OPTION);
+        int decision = JOptionPane.showConfirmDialog(new JFrame(), "Are you sure you want to destroy the sphere?", "Confirmation", JOptionPane.YES_NO_OPTION);
         if (decision == 0) {
-            //AurvandilController.destroySphere(); //TESTING //NEEDS TO HAVE LOADING DIALOG SCREEN
+            if (circuitBreaker) AurvandilController.destroySphere();
         }
-        System.out.println("Destroying HEALPix sphere");
     }
 }

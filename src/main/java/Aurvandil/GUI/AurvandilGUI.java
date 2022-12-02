@@ -365,12 +365,11 @@ public class AurvandilGUI {
      * Send database information to the PostgreSQLBA object
      */
     public void setDatabaseInformation() {
-        String ip = "jbdc:postgresql://" + dbField.getText() + ":" + portField.getText() + "/" + dbNameField.getText();
+        String ip = "jdbc:postgresql://" + dbField.getText() + ":" + portField.getText() + "/" + dbNameField.getText();
         String port = portField.getText();
         String username = userField.getText();
         String password = String.valueOf(passField.getPassword());
         PostgreSQLBA.setDatabaseInformation(ip, port, username, password);
-        System.out.println(ip);
     }
 
     /**

@@ -65,12 +65,11 @@ public class ConeSearcherListener implements ActionListener {
 
         String query;
         if (qualifiers.size() > 0) {
-            query = "SELECT " + String.join(",", fields) + " FROM %s WHERE " + String.join(" AND ", qualifiers);
+            query = "SELECT " + String.join(",", fields) + " FROM pixel%s WHERE " + String.join(" AND ", qualifiers);
         } else {
-            query = "SELECT " + String.join(",", fields) + " FROM %s";
+            query = "SELECT " + String.join(",", fields) + " FROM pixel%s";
         }
-        System.out.println("Running cone search with query"); // TESTING
         aurvandilGUI.setDatabaseInformation();
-        //AurvandilController.coneSearch(Double.parseDouble(aurvandilGUI.raField.getText()), Double.parseDouble(aurvandilGUI.decField.getText()), Double.parseDouble(aurvandilGUI.radField.getText()), query); //TESTING
+        AurvandilController.coneSearch(Double.parseDouble(aurvandilGUI.raField.getText()), Double.parseDouble(aurvandilGUI.decField.getText()), Double.parseDouble(aurvandilGUI.radField.getText()), query);
     }
 }

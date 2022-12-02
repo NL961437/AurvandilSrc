@@ -4,12 +4,17 @@ import Aurvandil.BA.HealPixBA;
 import Aurvandil.BA.PostgreSQLBA;
 import Aurvandil.DAO.CSVReaderDAO;
 import Aurvandil.DAO.CSVWriterDAO;
+import Aurvandil.GUI.ProgressWindow;
 import Aurvandil.Util.FileUtil;
 import Aurvandil.Util.SphereConstructorUtil;
 
+import javax.swing.*;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.sql.Connection;
-import java.util.Date;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.List;
 
 public class AurvandilController {
@@ -28,46 +33,121 @@ public class AurvandilController {
     public static void addFilesToDatabase() {
         Connection connection = PostgreSQLBA.createConnection();
         if (!PostgreSQLBA.sphereExists(connection)) {
-            System.out.println("Can not add files, no sphere exists");
             PostgreSQLBA.closeConnection(connection);
+            JOptionPane.showMessageDialog(new JFrame(), "Can not add files, a HEALPix Sphere doesn't exist");
             return;
         }
         HealPixBA sphere = new HealPixBA(PostgreSQLBA.getSphereSize(connection));
-        for (File file : FileUtil.getUncommittedFiles()) {
-            long start = new Date().getTime();
-            System.out.println(file.getName());
 
-            System.out.println("COMPILE COMMANDS");
-            CSVReaderDAO csvReaderDAO = new CSVReaderDAO(file.getAbsolutePath());
-            int numRows = csvReaderDAO.getRowCount();
-            String[] commands = new String[numRows];
+        File[] fileList = FileUtil.getUncommittedFiles();
 
-            for (int rowNum = 0; rowNum < numRows; rowNum++) {
-                String[] row = CSVReaderDAO.convertRow(csvReaderDAO.getNextRow());
-                long pixel = sphere.getPixelLocation(Double.parseDouble(row[5]), Double.parseDouble(row[7]));
-                commands[rowNum] = String.format("INSERT INTO pixel%d VALUES (%s)", pixel, String.join(",", row));
+        ProgressWindow progressWindow = ProgressWindow.getAddFileProgress();
+        final boolean[] cancel = {false};
+
+        final JFrame[] cancelFrame = new JFrame[1];
+        ActionListener cancelListener = event -> {
+            cancel[0] = true;
+            cancelFrame[0] = new JFrame();
+            JLabel warningText = new JLabel("Cancelling. DO NOT CLOSE THE PROGRAM");
+            warningText.setHorizontalAlignment(SwingConstants.CENTER);
+            cancelFrame[0].add(warningText);
+            cancelFrame[0].setVisible(true);
+            cancelFrame[0].setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+            cancelFrame[0].setSize(300,100);
+            progressWindow.disableCancelButton();
+        };
+        progressWindow.setCancelListener(cancelListener);
+
+        class AddFilesThread extends Thread {
+            public void run(){
+                double fileCount = 0;
+                for (File file : fileList) {
+                    if (cancel[0]) {
+                        break;
+                    }
+                    progressWindow.newFile(file.getName());
+
+                    CSVReaderDAO csvReaderDAO = new CSVReaderDAO(file.getAbsolutePath());
+                    int numRows = csvReaderDAO.getRowCount();
+                    String[] commands = new String[numRows];
+
+                    for (int rowNum = 0; rowNum < numRows; rowNum++) {
+                        String[] row = CSVReaderDAO.convertRow(csvReaderDAO.getNextRow());
+                        long pixel = sphere.getPixelLocation(Double.parseDouble(row[5]), Double.parseDouble(row[7]));
+                        commands[rowNum] = String.format("INSERT INTO pixel%d VALUES (%s)", pixel, String.join(",", row));
+                    }
+
+                    PostgreSQLBA.runCommands(commands, connection);
+                    csvReaderDAO.closeScanner();
+
+                    FileUtil.moveFile(file);
+
+                    fileCount++;
+                    progressWindow.setProgressBar((int) ((fileCount / fileList.length) * 100));
+                }
+                progressWindow.closeWindow();
+                if (cancel[0]) {
+                    cancelFrame[0].setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                    cancelFrame[0].dispatchEvent(new WindowEvent(cancelFrame[0], WindowEvent.WINDOW_CLOSING));
+                } else {
+                    JOptionPane.showMessageDialog(null, "All files added to database!");
+                }
+                PostgreSQLBA.closeConnection(connection);
             }
-
-            System.out.println("RUN COMMANDS");
-            PostgreSQLBA.runCommands(commands, connection);
-            csvReaderDAO.closeScanner();
-
-            FileUtil.moveFile(file);
-            System.out.println((new Date().getTime() - start)/1000.0 + " seconds");
         }
-        PostgreSQLBA.closeConnection(connection);
+        AddFilesThread mainThread = new AddFilesThread();
+        mainThread.start();
     }
 
     /**
      * Count the number of stars currently stored in the database
      * Loops through all tables in the database querying for the number of rows.
-     * @return number of stars in HEALPix SQL database
      */
-    public static long countAllStars() {
+    public static void countAllStars() {
         Connection connection = PostgreSQLBA.createConnection();
-        long starCount = PostgreSQLBA.getNumberOfRows(connection);
-        PostgreSQLBA.closeConnection(connection);
-        return starCount;
+
+        if (!PostgreSQLBA.sphereExists(connection)) {
+            PostgreSQLBA.closeConnection(connection);
+            JOptionPane.showMessageDialog(new JFrame(), "Can not count stars, HEALPix sphere does not exist");
+            return;
+        }
+
+        String findNumberOfRows = "SELECT COUNT(solution_id) FROM %s";
+        int pixels = PostgreSQLBA.getSphereSize(connection);
+        ProgressWindow progressWindow = ProgressWindow.getProgressTimeCancel();
+        final boolean[] cancel = {false};
+
+        ActionListener cancelListener = event -> cancel[0] = true;
+        progressWindow.setCancelListener(cancelListener);
+
+        class CountStarsThread extends Thread {
+            public void run(){
+                long sum = 0;
+                for (int i = 0; i < pixels; i++) {
+                    if (cancel[0]) {
+                        break;
+                    }
+                    try {
+                        Statement st = connection.createStatement();
+                        ResultSet rs = st.executeQuery(String.format(findNumberOfRows, "pixel" + i));
+                        rs.next();
+                        sum += rs.getInt(1);
+                        st.close();
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                    progressWindow.setProgressBar((int)(i / (double)pixels * 100));
+                }
+
+                PostgreSQLBA.closeConnection(connection);
+                progressWindow.closeWindow();
+                if (!cancel[0]) {
+                    JOptionPane.showMessageDialog(new JFrame(), "Number of stars: " + sum);
+                }
+            }
+        }
+        CountStarsThread mainThread = new CountStarsThread();
+        mainThread.start();
     }
 
     /**
@@ -82,16 +162,25 @@ public class AurvandilController {
     public static void buildSphere(int nSize) {
         Connection connection = PostgreSQLBA.createConnection();
         if (PostgreSQLBA.sphereExists(connection)) {
-            System.out.println("Can not create sphere, one already exists");
             PostgreSQLBA.closeConnection(connection);
+            JOptionPane.showMessageDialog(new JFrame(), "Can not create sphere, one already exists");
             return;
         }
-        int pixelsNeeded = 12 * (int) Math.pow(4, nSize - 1);
-        System.out.println("CREATING SPHERE OF SIZE " + pixelsNeeded);
-        String[] commands = SphereConstructorUtil.getBuildSphereCommands(pixelsNeeded);
-        PostgreSQLBA.runCommands(commands, connection);
-        PostgreSQLBA.closeConnection(connection);
-        System.out.println("DONE");
+
+        ProgressWindow progressWindow = ProgressWindow.getTime();
+
+        class BuildSphereThread extends Thread {
+            public void run(){
+                int pixelsNeeded = 12 * (int) Math.pow(4, nSize - 1);
+                String[] commands = SphereConstructorUtil.getBuildSphereCommands(pixelsNeeded);
+                PostgreSQLBA.runCommands(commands, connection);
+                PostgreSQLBA.closeConnection(connection);
+                progressWindow.closeWindow();
+                JOptionPane.showMessageDialog(new JFrame(), "Created HEALPix sphere with " + pixelsNeeded + " pixels");
+            }
+        }
+        BuildSphereThread mainThread = new BuildSphereThread();
+        mainThread.start();
     }
 
     /**
@@ -105,15 +194,23 @@ public class AurvandilController {
     public static void destroySphere() {
         Connection connection = PostgreSQLBA.createConnection();
         if (!PostgreSQLBA.sphereExists(connection)) {
-            System.out.println("Can not destroy sphere, none exists");
             PostgreSQLBA.closeConnection(connection);
+            JOptionPane.showMessageDialog(new JFrame(), "Can not destroy sphere, HEALPix sphere does not exist");
             return;
         }
-        System.out.println("DESTROYING SPHERE");
-        String[] commands =  SphereConstructorUtil.getDestroySphereCommands(connection);
-        PostgreSQLBA.runCommands(commands, connection);
-        PostgreSQLBA.closeConnection(connection);
-        System.out.println("DONE");
+
+        ProgressWindow progressWindow = ProgressWindow.getTime();
+        class DestroySphereThread extends Thread {
+            public void run(){
+                String[] commands =  SphereConstructorUtil.getDestroySphereCommands(connection);
+                PostgreSQLBA.runCommands(commands, connection);
+                PostgreSQLBA.closeConnection(connection);
+                progressWindow.closeWindow();
+                JOptionPane.showMessageDialog(new JFrame(), "Destroyed HEALPix Sphere");
+            }
+        }
+        DestroySphereThread mainThread = new DestroySphereThread();
+        mainThread.start();
     }
 
     /**
@@ -128,30 +225,46 @@ public class AurvandilController {
      * @param query general query with desired fields and filters
      */
     public static void coneSearch(double ra, double dec, double rad, String query) {
-        long start = new Date().getTime();
-        if (ra > 360 || ra < 0) {
-            System.out.println("Right ascension out of range (0 - 360)");
-            return;
-        } else if (dec > 90 || dec < -90) {
-            System.out.println("Declination out of range (-90 - 90)");
-            return;
-        } else if (rad < 0 || rad > 180) {
-            System.out.println("Radius out of range (0 - 180)");
-            return;
-        }
-        System.out.printf("Running cone search on RA: %f, DEC: %f, RAD: %f\n", ra, dec, rad);
         Connection connection = PostgreSQLBA.createConnection();
-        HealPixBA healPixBA = new HealPixBA(PostgreSQLBA.getSphereSize(connection));
-        CSVWriterDAO file = new CSVWriterDAO();
-        for (long pixel : healPixBA.conePixelSearch(ra, dec, rad)) {
-            List<String> queryResults = PostgreSQLBA.makeQuery(pixel, connection, query, ra, dec, rad);
-            for (String star : queryResults) {
-                file.writeLine(star);
-            }
+        if (!PostgreSQLBA.sphereExists(connection)) {
+            PostgreSQLBA.closeConnection(connection);
+            JOptionPane.showMessageDialog(new JFrame(), "Can not cone search, HEALPix sphere does not exist");
+            return;
         }
 
-        PostgreSQLBA.closeConnection(connection);
-        file.closeFile();
-        System.out.println("Cone search took " + (new Date().getTime() - start)/1000.0 + " seconds");
+        if (ra > 360 || ra < 0) {
+            JOptionPane.showMessageDialog(new JFrame(), "Right ascension out of range (0 - 360)");
+            return;
+        } else if (dec > 90 || dec < -90) {
+            JOptionPane.showMessageDialog(new JFrame(), "Declination out of range (-90 - 90)");
+            return;
+        } else if (rad < 0 || rad > 180) {
+            JOptionPane.showMessageDialog(new JFrame(), "Radius out of range (0 - 180)");
+            return;
+        }
+
+        ProgressWindow progressWindow = ProgressWindow.getProgressTimeCancel();
+        class ConeSearchThread extends Thread {
+            public void run(){
+                HealPixBA healPixBA = new HealPixBA(PostgreSQLBA.getSphereSize(connection));
+                CSVWriterDAO file = new CSVWriterDAO();
+                double pixelCount = 0;
+                long[] pixelsToSearch = healPixBA.conePixelSearch(ra, dec, rad);
+                for (long pixel : pixelsToSearch) {
+                    List<String> queryResults = PostgreSQLBA.makeQuery(pixel, connection, query, ra, dec, rad);
+                    for (String star : queryResults) {
+                        file.writeLine(star);
+                    }
+                    pixelCount++;
+                    progressWindow.setProgressBar((int)(pixelCount / pixelsToSearch.length * 100));
+                }
+
+                PostgreSQLBA.closeConnection(connection);
+                file.closeFile();
+                progressWindow.closeWindow();
+            }
+        }
+        ConeSearchThread mainThread = new ConeSearchThread();
+        mainThread.start();
     }
 }

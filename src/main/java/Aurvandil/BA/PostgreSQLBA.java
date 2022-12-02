@@ -1,5 +1,6 @@
 package Aurvandil.BA;
 
+import Aurvandil.GUI.ProgressWindow;
 import Aurvandil.Util.HaversineDistanceUtil;
 
 import java.sql.Connection;
@@ -9,6 +10,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 public class PostgreSQLBA {
     private static String ip;
@@ -95,29 +97,6 @@ public class PostgreSQLBA {
             System.out.println(e.getMessage());
             return -1;
         }
-    }
-
-    /**
-     * Get number of rows within the current HEALPix SQL database
-     * @param conn Java SQL database connection
-     * @return number of rows in current sphere
-     */
-    public static long getNumberOfRows(Connection conn) {
-        String findNumberOfRows = "SELECT COUNT(solution_id) FROM %s";
-        int pixels = getSphereSize(conn);
-        long sum = 0;
-        for (int i = 0; i < pixels; i++) {
-            try {
-                Statement st = conn.createStatement();
-                ResultSet rs = st.executeQuery(String.format(findNumberOfRows, "pixel" + i));
-                rs.next();
-                sum += rs.getInt(1);
-                st.close();
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
-        }
-        return sum;
     }
 
     /**
